@@ -127,4 +127,5 @@ D:\pos\DM106\Exemplo1\TraballhoDM106\obj\Release\TraballhoDM106.csproj.GenerateR
 D:\pos\DM106\Exemplo1\TraballhoDM106\obj\Release\TraballhoDM106.Migrations.alteracao_campos_nome.resources
 D:\pos\DM106\Exemplo1\TraballhoDM106\obj\Release\TraballhoDM106.Migrations.alteracao_campos_produto.resources
 D:\pos\DM106\Exemplo1\TraballhoDM106\obj\Release\TraballhoDM106.Migrations.campos_produto.resources
-D:\pos\DM106\Exemplo1\TraballhoDM106\obj\Release\TraballhoDM106.csprojResolveAssemblyReference.cache
+D:\pos\DM106\Exemplo1\TraballhoDM106\bin\TraballhoDM106.XmlSerializers.dll
+D:\pos\DM106\Exemplo1\TraballhoDM106\obj\Release\TraballhoDM106.XmlSerializers.dll

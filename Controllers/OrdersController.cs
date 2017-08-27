@@ -9,6 +9,8 @@ using System.Net.Http;
 using System.Security.Principal;
 using System.Web.Http;
 using System.Web.Http.Description;
+using TraballhoDM106.br.com.correios.ws;
+using TraballhoDM106.CRMClient;
 using TraballhoDM106.Models;
 
 namespace TraballhoDM106.Controllers
@@ -130,6 +132,20 @@ namespace TraballhoDM106.Controllers
         public IHttpActionResult CalculateShipping(int id)
         {
             Order order = db.Orders.Find(id);
+            string cepOrigem = "69096010";
+            string frete;
+            string cepDestino;
+            decimal peso = 0;
+            int formato = 1;
+            decimal comprimento = 0;
+            decimal altura = 0;
+            decimal largura = 0;
+            decimal diamentro = 0;
+            string entregaMaoPropria = "N";
+            //decimal valorDeclarado= 0;
+            string avisoRecebimento = "S";
+            decimal shipping;
+
 
             if (checkUserFromOrder(User, order))
             {
@@ -143,16 +159,56 @@ namespace TraballhoDM106.Controllers
                 return StatusCode(HttpStatusCode.Forbidden);
             }
 
-            if (!ModelState.IsValid)
+            CRMRestClient crmClient = new CRMRestClient();
+            Customer customer = crmClient.GetCustomerByEmail(User.Identity.Name);
+            if (customer != null)
             {
-                return BadRequest(ModelState);
+                cepDestino = customer.zip;
+            }
+            else
+            {
+                return BadRequest("Falha ao	consultar o	CRM");
+            }
+
+             foreach(OrderItem item in order.OrderItems)
+            {
+                Product product =  db.Products.Find(item.Id);
+                peso = (item.Quantity * product.weight) + peso;
+                comprimento = (item.Quantity * product.lenght) + comprimento;
+                altura = (item.Quantity * product.height) + altura;
+                largura = (item.Quantity * product.width) + largura;
+                diamentro = (item.Quantity * product.diameter) + diamentro;
+                order.Value = (item.Quantity * order.Value) + product.price;
+            }
+            
+            CalcPrecoPrazoWS correios = new CalcPrecoPrazoWS();
+            cResultado resultado = correios.CalcPrecoPrazo("", "", "40010", cepOrigem, cepDestino,  Convert.ToString(peso), formato, Decimal.ToInt32(comprimento), Decimal.ToInt32(altura), Decimal.ToInt32(largura), Decimal.ToInt32(diamentro), entregaMaoPropria, Decimal.ToInt32(order.Value), avisoRecebimento);
+            if (resultado.Servicos[0].Erro.Equals("0"))
+            {
+                frete = "Valor	do	frete:	" + resultado.Servicos[0].Valor + "	-	Prazo	de	entrega:	" + resultado.Servicos[0].PrazoEntrega + "	dia(s)";
+                shipping = Convert.ToDecimal(resultado.Servicos[0].Valor);
+                order.DeliveryDate = order.DateOrder.AddDays(Int32.Parse(resultado.Servicos[0].PrazoEntrega));
+            }
+            else
+            {
+                return BadRequest("Código	do	erro:	" + resultado.Servicos[0].Erro + "-" + resultado.Servicos[0].MsgErro);
+            }
+
+            if(order.OrderItems.Count == 0)
+            {
+                return BadRequest("Pedido sem itens");
+            }
+
+            if (!order.Status.Equals("NOVO"))
+            {
+                BadRequest("Pedido com Status diferente de 'NOVO'");
             }
 
             if (id != order.Id)
             {
                 return BadRequest();
             }
-
+            order.ShippingPrice = shipping;
             db.Entry(order).State = EntityState.Modified;
 
             try
@@ -197,6 +253,8 @@ namespace TraballhoDM106.Controllers
             {
                 return BadRequest(ModelState);
             }
+
+
             foreach(OrderItem item in order.OrderItems)
             {
                 Product product =  db.Products.Find(item.Id);
@@ -246,7 +304,44 @@ namespace TraballhoDM106.Controllers
             db.SaveChanges();
 
             return Ok(order);
-        }        
+        }
+
+        [ResponseType(typeof(string))]
+        [HttpGet]
+        [Route("frete")]
+        public IHttpActionResult CalculaFrete()
+        {
+            string frete;
+            CalcPrecoPrazoWS correios = new CalcPrecoPrazoWS();
+            cResultado resultado = correios.CalcPrecoPrazo("", "","40010", "37540000", "37002970", "1", 1, 30, 30, 30, 30, "N", 100, "S");
+            if (resultado.Servicos[0].Erro.Equals("0"))
+            {
+                frete = "Valor	do	frete:	" + resultado.Servicos[0].Valor + "	-	Prazo	de	entrega:	" + resultado.Servicos[0].PrazoEntrega + "	dia(s)";
+                return Ok(frete);
+            }
+            else
+            {
+                return BadRequest("Código	do	erro:	" + resultado.Servicos[0].Erro + "-" + resultado.Servicos[0].MsgErro);
+            }
+        }
+
+
+        [ResponseType(typeof(string))]
+        [HttpGet]
+        [Route("cep")]
+        public IHttpActionResult ObtemCEP()
+        {
+            CRMRestClient crmClient = new CRMRestClient();
+            Customer customer = crmClient.GetCustomerByEmail(User.Identity.Name);
+            if (customer != null)
+            {
+                return Ok(customer.zip);
+            }
+            else
+            {
+                return BadRequest("Falha ao	consultar o	CRM");
+            }
+        }
 
         protected override void Dispose(bool disposing)
         {
