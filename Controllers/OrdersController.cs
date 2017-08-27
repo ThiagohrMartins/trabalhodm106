@@ -15,6 +15,7 @@ using TraballhoDM106.Models;
 
 namespace TraballhoDM106.Controllers
 {
+    [RoutePrefix("api/orders")]
     public class OrdersController : ApiController
     {
         private TraballhoDM106Context db = new TraballhoDM106Context();
@@ -69,69 +70,26 @@ namespace TraballhoDM106.Controllers
             return StatusCode(HttpStatusCode.Forbidden);
         }
 
-        // PUT: api/Orders/5
-        [ResponseType(typeof(void))]
-        public IHttpActionResult PutOrder(int id, Order order)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            if (id != order.Id)
-            {
-                return BadRequest();
-            }
-
-            db.Entry(order).State = EntityState.Modified;
-
-            try
-            {
-                db.SaveChanges();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!OrderExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return StatusCode(HttpStatusCode.NoContent);
-        }
-
-        // POST: api/Orders
-        [ResponseType(typeof(Order))]
-        public IHttpActionResult PostOrder(Order order)
-        {
-            order.Status = "Novo";
-            order.Weight = 0;
-            order.ShippingPrice = 0;
-            order.Value = 0;
-            order.DateOrder = new DateTime();
-            order.DeliveryDate = new DateTime();
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }            
-
-            db.Orders.Add(order);
-            db.SaveChanges();
-
-            return CreatedAtRoute("DefaultApi", new { id = order.Id }, order);
-        }
-
         [Authorize]
         [HttpPut]
         [Route("CalculateShipping")]
         public IHttpActionResult CalculateShipping(int id)
         {
+
             Order order = db.Orders.Find(id);
+            if (checkUserFromOrder(User, order))
+            {
+
+                if (order == null)
+                {
+                    return NotFound();
+                }
+
+            }
+            else
+            {
+                return StatusCode(HttpStatusCode.Forbidden);
+            }
             string cepOrigem = "69096010";
             string frete;
             string cepDestino;
@@ -159,6 +117,11 @@ namespace TraballhoDM106.Controllers
                 return StatusCode(HttpStatusCode.Forbidden);
             }
 
+            if (order.OrderItems.Count == 0)
+            {
+                return BadRequest("Pedido sem itens");
+            }
+            ICollection<OrderItem> produtos = order.OrderItems;
             CRMRestClient crmClient = new CRMRestClient();
             Customer customer = crmClient.GetCustomerByEmail(User.Identity.Name);
             if (customer != null)
@@ -170,19 +133,22 @@ namespace TraballhoDM106.Controllers
                 return BadRequest("Falha ao	consultar o	CRM");
             }
 
-             foreach(OrderItem item in order.OrderItems)
+
+            foreach (OrderItem item in produtos)
             {
-                Product product =  db.Products.Find(item.Id);
+                Product product = db.Products.Find(item.ProductId);
                 peso = (item.Quantity * product.weight) + peso;
                 comprimento = (item.Quantity * product.lenght) + comprimento;
                 altura = (item.Quantity * product.height) + altura;
                 largura = (item.Quantity * product.width) + largura;
                 diamentro = (item.Quantity * product.diameter) + diamentro;
-                order.Value = (item.Quantity * order.Value) + product.price;
+               order.Value = (item.Quantity * order.Value) + product.price;
             }
+            order.Weight = peso;
+
             
             CalcPrecoPrazoWS correios = new CalcPrecoPrazoWS();
-            cResultado resultado = correios.CalcPrecoPrazo("", "", "40010", cepOrigem, cepDestino,  Convert.ToString(peso), formato, Decimal.ToInt32(comprimento), Decimal.ToInt32(altura), Decimal.ToInt32(largura), Decimal.ToInt32(diamentro), entregaMaoPropria, Decimal.ToInt32(order.Value), avisoRecebimento);
+            cResultado resultado = correios.CalcPrecoPrazo("", "", "40010", cepOrigem, cepDestino, Convert.ToString(peso), formato, Decimal.ToInt32(comprimento), Decimal.ToInt32(altura), Decimal.ToInt32(largura), Decimal.ToInt32(diamentro), entregaMaoPropria, Decimal.ToInt32(order.Value), avisoRecebimento);
             if (resultado.Servicos[0].Erro.Equals("0"))
             {
                 frete = "Valor	do	frete:	" + resultado.Servicos[0].Valor + "	-	Prazo	de	entrega:	" + resultado.Servicos[0].PrazoEntrega + "	dia(s)";
@@ -194,10 +160,7 @@ namespace TraballhoDM106.Controllers
                 return BadRequest("Código	do	erro:	" + resultado.Servicos[0].Erro + "-" + resultado.Servicos[0].MsgErro);
             }
 
-            if(order.OrderItems.Count == 0)
-            {
-                return BadRequest("Pedido sem itens");
-            }
+            
 
             if (!order.Status.Equals("NOVO"))
             {
@@ -254,13 +217,6 @@ namespace TraballhoDM106.Controllers
                 return BadRequest(ModelState);
             }
 
-
-            foreach(OrderItem item in order.OrderItems)
-            {
-                Product product =  db.Products.Find(item.Id);
-                order.Value = order.Value + product.price;
-            }
-
             order.Status = "Fechado";
 
             db.Entry(order).State = EntityState.Modified;
@@ -283,6 +239,66 @@ namespace TraballhoDM106.Controllers
 
             return StatusCode(HttpStatusCode.NoContent);
         }
+
+        // PUT: api/Orders/5
+        [ResponseType(typeof(void))]
+        public IHttpActionResult PutOrder(int id, Order order)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (id != order.Id)
+            {
+                return BadRequest();
+            }
+
+            db.Entry(order).State = EntityState.Modified;
+
+            try
+            {
+                db.SaveChanges();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!OrderExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return StatusCode(HttpStatusCode.NoContent);
+        }
+
+        // POST: api/Orders
+        [ResponseType(typeof(Order))]
+        public IHttpActionResult PostOrder(Order order)
+        {
+            order.Status = "Novo";
+            order.Weight = 0;
+            order.ShippingPrice = 0;
+            order.Value = 0;
+            order.DateOrder = DateTime.Today;
+            order.DeliveryDate = DateTime.Today;
+            order.userName = User.Identity.Name;
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }            
+
+            db.Orders.Add(order);
+            db.SaveChanges();
+
+            return CreatedAtRoute("DefaultApi", new { id = order.Id }, order);
+        }
+
+        
 
         // DELETE: api/Orders/5
         [ResponseType(typeof(Order))]

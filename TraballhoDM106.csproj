@@ -259,7 +259,7 @@
     <Compile Include="Models\AccountViewModels.cs" />
     <Compile Include="Models\IdentityModels.cs" />
     <Compile Include="Models\Order.cs" />
-    <Compile Include="Models\Orderitem.cs" />
+    <Compile Include="Models\OrderItem.cs" />
     <Compile Include="Models\Product.cs" />
     <Compile Include="Models\TraballhoDM106Context.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

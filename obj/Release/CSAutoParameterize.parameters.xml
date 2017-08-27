@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<parameters>
+  <parameter name="DefaultConnection-Web.config Connection String" description="DefaultConnection A Cadeia de Conexão usada em web.config pelo aplicativo para acessar o banco de dados." defaultValue="Data Source=(LocalDb)\MSSQLLocalDB;AttachDbFilename=|DataDirectory|\aspnet-TraballhoDM106-20170812011445.mdf;Initial Catalog=aspnet-TraballhoDM106-20170812011445;Integrated Security=True" tags="SqlConnectionString">
+    <parameterEntry kind="XmlFile" scope="D:\\pos\\DM106\\Exemplo1\\TraballhoDM106\\obj\\Release\\Package\\PackageTmp\\Web\.config$" match="/configuration/connectionStrings/add[@name='DefaultConnection']/@connectionString" />
+  </parameter>
+  <parameter name="TraballhoDM106Context-Web.config Connection String" description="TraballhoDM106Context A Cadeia de Conexão usada em web.config pelo aplicativo para acessar o banco de dados." defaultValue="Data Source=(localdb)\MSSQLLocalDB; Initial Catalog=TraballhoDM106Context-20170812140532; Integrated Security=True; MultipleActiveResultSets=True; AttachDbFilename=|DataDirectory|TraballhoDM106Context-20170812140532.mdf" tags="SqlConnectionString">
+    <parameterEntry kind="XmlFile" scope="D:\\pos\\DM106\\Exemplo1\\TraballhoDM106\\obj\\Release\\Package\\PackageTmp\\Web\.config$" match="/configuration/connectionStrings/add[@name='TraballhoDM106Context']/@connectionString" />
+  </parameter>
+  <parameter name="TraballhoDM106Context_DatabasePublish-Web.config Connection String" description="TraballhoDM106Context_DatabasePublish A Cadeia de Conexão usada em web.config pelo aplicativo para acessar o banco de dados." defaultValue="TraballhoDM106Context_DatabasePublish.ConnetionString" tags="SqlConnectionString">
+    <parameterEntry kind="XmlFile" scope="D:\\pos\\DM106\\Exemplo1\\TraballhoDM106\\obj\\Release\\Package\\PackageTmp\\Web\.config$" match="/configuration/connectionStrings/add[@name='TraballhoDM106Context_DatabasePublish']/@connectionString" />
+  </parameter>
+</parameters>

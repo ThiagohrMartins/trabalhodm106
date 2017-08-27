@@ -13,7 +13,7 @@ namespace TraballhoDM106.CRMClient
         public CRMRestClient()
         {
             client = new HttpClient();
-            client.BaseAddress = new Uri("http://http://siecolacrm.azurewebsites.net/api/");
+            client.BaseAddress = new Uri("http://siecolacrm.azurewebsites.net/api/");
                     //	Add	an	Accept	header	for	JSON	format.
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                     //Mount	the	credentials	in	base64	encoding
@@ -25,7 +25,7 @@ namespace TraballhoDM106.CRMClient
         public Customer GetCustomerByEmail(string email)
         {
             //	Get	a	customer	by	ID
-            HttpResponseMessage response = client.GetAsync("customers / byemail ? email = "	+	email).Result;
+            HttpResponseMessage response = client.GetAsync("customers/byemail?email="+email).Result;
 
             if (response.IsSuccessStatusCode)
             {
